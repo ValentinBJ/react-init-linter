@@ -1,0 +1,94 @@
+#!/bin/bash
+
+sudo rm -R ./$1
+npx create-react-app $1
+cd ./$1
+
+npm install node-sass --save-dev
+npm install eslint --save-dev
+npm install eslint-plugin-react --save-dev
+npm install babel-eslint --save-dev
+./node_modules/eslint/bin/eslint.js --init
+
+
+npm install prettier --save-dev
+
+
+npm install eslint-config-prettier eslint-plugin-prettier --save-dev
+
+npm i -D eslint eslint-config-prettier eslint-plugin-prettier prettier
+
+tmp=$(mktemp)
+
+jq '.extends[.extends|length] |= . + "prettier" | .plugins[.plugins|length] |= . + "prettier" | .rules += {"react/jsx-uses-react": "off","react/react-in-jsx-scope": "off", "prettier/prettier":"error", "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }]} | .parser += "babel-eslint"' .eslintrc.json > "$tmp" && mv "$tmp" .eslintrc.json
+
+tmp=$(mktemp)
+jq '.scripts += {"lint": "eslint . --fix"}' package.json > "$tmp" && mv "$tmp" package.json
+
+
+touch .prettierrc.json
+cat <<EOT >> .prettierrc.json
+{
+  "semi": false
+}
+EOT
+
+mv src/App.css src/App.scss
+
+
+rm src/App.js
+touch src/App.js
+
+cat <<EOT>> src/App.js
+import logo from './logo.svg';
+import './App.scss';
+
+function App() {
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.js</code> and save to reload.
+        </p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+
+EOT
+
+mkdir .vscode && touch .vscode/settings.json
+cat <<EOT >> .vscode/settings.json
+{
+  "editor.formatOnSave": true,
+  "[javascript]": {
+    "editor.formatOnSave": false
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+ }
+}
+EOT
+
+cat <<EOT>> .gitignore		
+.package-lock.json
+.eslintrc.json
+.prettierrc.json
+.vscode
+EOT
+npm run lint .
+git add *
+git commit -m "initialization"
+code .
+npm start  
